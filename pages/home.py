@@ -1,6 +1,9 @@
 import streamlit as st
 import re
+from io import BytesIO
 from PyPDF2 import PdfReader
+import markdown2
+from weasyprint import HTML
 from gemini import get_summary
 
 
@@ -19,7 +22,7 @@ def render_home():
     st.title("Upload PDF/PPTX")
     st.subheader("Upload your study materials to get started")
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
-
+    file_name = uploaded_file.name if uploaded_file else "No file uploaded"
     if uploaded_file is None:
         st.warning("Please upload a PDF file to proceed.")
         return
@@ -48,10 +51,30 @@ def render_home():
         st.success("Summary generated!")
         st.markdown("### Summary")
         
-        # Extract content from markdown code blocks using regex
+        # Extract and store summary
         code_block_match = re.search(r'```(?:markdown|readme)?\s*(.*?)\s*```', summary, re.DOTALL | re.IGNORECASE)
         if code_block_match:
             cleaned_summary = code_block_match.group(1).strip()
-            st.markdown(cleaned_summary)
         else:
-            st.markdown(summary)
+            cleaned_summary = summary
+            
+        st.session_state["summary"] = cleaned_summary
+        st.markdown(cleaned_summary)
+        
+    if "summary" in st.session_state:
+        st.markdown("---")
+        st.markdown("### Summary")
+        st.markdown(st.session_state["summary"])
+        
+        # Generate PDF for download
+        html_content = markdown2.markdown(st.session_state["summary"])
+        pdf_buffer = BytesIO()
+        HTML(string=html_content).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        
+        st.download_button(
+            label="📄 Download Summary as PDF",
+            data=pdf_buffer,
+            file_name=f"{file_name}_Summary.pdf",
+            mime="application/pdf"
+        )

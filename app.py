@@ -39,20 +39,21 @@ PAGE_RENDERERS = {
 
 def main():
     """Main function to render the application."""
-    # Sidebar with page selector
-    st.sidebar.title("📚 AI Study Assistant")
-    st.sidebar.markdown("---")
-    
-    # Quick navigation in sidebar
-    st.sidebar.markdown("### Quick Navigation")
-    for i, page in enumerate(PAGES):
-        if st.sidebar.button(page, key=f"sidebar_{page}", use_container_width=True):
-            st.session_state.current_page = i
-            st.rerun()
-    
-    st.sidebar.markdown("---")
-    current_page = PAGES[get_current_page_index()]
-    st.sidebar.info(f"Current page: **{current_page}**")
+    with st.sidebar:
+        current_page_index = get_current_page_index()
+        
+        for i, page in enumerate(PAGES):
+            is_current = (i == current_page_index)
+            
+            if is_current:
+                st.button(f"{page}", key=f"nav_{page}_current", use_container_width=True)
+            else:
+                if st.button(page, key=f"nav_{page}", use_container_width=True):
+                    st.session_state.current_page = i
+                    st.rerun()
+        
+        st.divider()
+        st.caption("v1.0.0")
     
     # Render the current page content using function mapping
     page_index = get_current_page_index()

@@ -1,6 +1,13 @@
 from google import genai
+from dotenv import load_dotenv
+import os
 
-client = genai.Client(api_key="AIzaSyBnHXZMP6scAPQ3eReL5qd4vhS5ZeJK_6E")
+
+load_dotenv()
+
+
+api_key = os.getenv("SECRET_SECRET_KEY")
+client = genai.Client(api_key=api_key)
 
 promp_2 = "What is your name"
 def get_summary(text_extracted):
