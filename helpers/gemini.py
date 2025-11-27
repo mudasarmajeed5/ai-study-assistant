@@ -9,7 +9,6 @@ load_dotenv()
 api_key = os.getenv("SECRET_SECRET_KEY")
 client = genai.Client(api_key=api_key)
 
-promp_2 = "What is your name"
 def get_summary(text_extracted):
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -66,11 +65,37 @@ def generate_quiz(extracted_text):
         Constraints:
         - Exactly 4 options: A, B, C, D.
         - The array may contain multiple quiz items upto 10.
-        - All strings must be plain text.
-        - No trailing commas.
         """
     )
 
+    if not response.text:
+        return "Gemini Model returned None/Null"
+
+    return response.text.strip()
+
+def generate_flashcards(extracted_text):
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=f"""
+        Generate a flashcards from the following:
+        {extracted_text}
+        Output rules (follow strictly):
+        - Output ONLY a valid JSON array.
+        - NO markdown.
+        - NO backticks.
+        - NO commentary.
+        - NO explanation before or after the JSON.
+        - Do NOT wrap JSON in ```json``` or any code fences.
+        - The output **must be directly parsable JSON**.
+        Each quiz item must follow this exact structure:
+        [
+        {{
+            "question": "string",
+            "answer": "string"
+        }}
+        ]
+        """
+    )
     if not response.text:
         return "Gemini Model returned None/Null"
 
