@@ -1,8 +1,16 @@
 from google import genai
 import os
+import sqlite3
+from pathlib import Path
+DB_PATH = Path("database/settings.db")
+def get_api_key():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.execute("SELECT value FROM config WHERE key = 'api_key'")
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else ""
 
-api_key = os.getenv("SECRET_SECRET_KEY")
-client = genai.Client(api_key="AIzaSyDxz4t7VoHs_ctcsDJX8Th4c7QM00R38qY")
+client = genai.Client(api_key=get_api_key())
 
 def get_summary(text_extracted):
     response = client.models.generate_content(
