@@ -67,7 +67,7 @@ else:
                 
             st.session_state["summary"] = cleaned_summary
             save_summary(file_name, cleaned_summary)
-            st.markdown(cleaned_summary)
+            st.success("Summary generated! Scroll down to view.")
 
 # Display selected summary if available
 if "selected_summary" in st.session_state:

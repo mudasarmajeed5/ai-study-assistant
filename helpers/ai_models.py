@@ -32,12 +32,27 @@ def get_summary(text_extracted):
 
 
 
-def generate_quiz(extracted_text):
+def generate_quiz(extracted_text, topics_list=None):
+    """
+    Generate quiz questions from text.
+    If topics_list provided, constrains questions to only those topics.
+    """
+    topics_constraint = ""
+    if topics_list:
+        topics_str = ", ".join([f'"{t}"' for t in topics_list])
+        topics_constraint = f"""
+        IMPORTANT: You MUST select questions from ONLY these topics:
+        [{topics_str}]
+        Each question's "topic" field must be EXACTLY one of these topics (case-insensitive).
+        """
+    
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=f"""
-        Generate a multiple-choice quiz from the following:
+        Generate 4 multiple-choice quiz from the following:
         {extracted_text}
+        {topics_constraint}
+        
         Output rules (follow strictly):
         - Output ONLY a valid JSON array.
         - NO markdown.
@@ -49,6 +64,7 @@ def generate_quiz(extracted_text):
         Each quiz item must follow this exact structure:
         [
         {{
+            "topic": "string (one of the provided topics, lowercase)",
             "question": "string",
             "options": {{
             "A": "string",
@@ -63,6 +79,7 @@ def generate_quiz(extracted_text):
         Constraints:
         - Exactly 4 options: A, B, C, D.
         - The array may contain multiple quiz items upto 10.
+        - Topic field should be lowercase and match provided topics exactly.
         """
     )
 

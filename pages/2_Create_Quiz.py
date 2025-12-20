@@ -5,13 +5,16 @@ import pandas as pd
 from helpers.ai_models import generate_flashcards
 from helpers.concept_extractor import ConceptExtractor
 from helpers.difficulty_planner import DifficultyPlanner
-# Configure page
+from helpers.db import save_quiz_score, save_topic_performance, init_db
+from helpers.naive_bayes import NaiveBayesClassifier
+
 st.set_page_config(page_title="Create Quiz - AI Study Assistant", page_icon="📝")
+
+init_db()
 
 st.title("📝 Create Quiz")
 st.markdown("---")
 
-# Initialize concept extractor for DFS analysis and difficulty planner for BFS
 extractor = ConceptExtractor()
 difficulty_planner = DifficultyPlanner()
 
@@ -20,17 +23,12 @@ if "selected_summary" not in st.session_state:
 else:
     st.success(f"📖 Currently viewing: {st.session_state.get('selected_summary_title', 'Summary')}")
     st.markdown("---")
-    st.write("Create custom quizzes to test your knowledge.")
     
-    # DFS Analysis of Summary Structure
-    st.markdown("---")
-    st.markdown("### 🧠 Summary Structure Analysis (DFS)")
-    
-    # Extract concepts using DFS
     topics = extractor.build_quiz_topics(st.session_state["selected_summary"])
     analysis = extractor.analyze_concept_relationships(st.session_state["selected_summary"])
     
-    # Display analysis in columns
+    st.markdown("### 🧠 Summary Structure Analysis (DFS)")
+    
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Main Concepts", analysis["total_main_concepts"])
@@ -39,7 +37,6 @@ else:
     with col3:
         st.metric("Total Topics", analysis["total_main_concepts"] + analysis["total_subconcepts"])
     
-    # Show complexity breakdown
     st.write("**Concept Complexity Breakdown:**")
     complexity_df = pd.DataFrame({
         "Complexity": ["Simple", "Moderate", "Complex"],
@@ -51,24 +48,12 @@ else:
     })
     st.bar_chart(complexity_df.set_index("Complexity"))
     
-    # Display topics in hierarchical order (DFS order)
-    st.write("**Topics (in DFS order):**")
-    for topic in topics:
-        difficulty = extractor.get_concept_difficulty(topic)
-        difficulty_emoji = "🟢" if difficulty == "Easy" else "🟡" if difficulty == "Medium" else "🔴"
-        
-        st.write(f"{difficulty_emoji} **{topic['main']}** ({difficulty})")
-        if topic['subtopics']:
-            for sub in topic['subtopics']:
-                st.write(f"   └─ {sub}")
-    
-    # K-Means Clustering Analysis
     st.markdown("---")
     st.markdown("### 📊 Topics Grouped by Similarity (K-Means)")
     
     clustered_topics = difficulty_planner.get_topic_clusters_by_difficulty(topics)
     
-    tab1, tab2, tab3 = st.tabs(["🟢 Cluster 1 (Easy)", "🟡 Cluster 2 (Medium)", "🔴 Cluster 3 (Hard)"])
+    tab1, tab2, tab3 = st.tabs(["🟢 Easy", "🟡 Medium", "🔴 Hard"])
     
     with tab1:
         if clustered_topics["Easy"]:
@@ -92,33 +77,36 @@ else:
             st.info("No topics in this cluster")
     
     st.markdown("---")
-    progressive_sequence = difficulty_planner.get_progressive_quiz_sequence(topics)
-    st.write("**Recommended Quiz Order:**")
-    for idx, topic in enumerate(progressive_sequence, 1):
-        st.write(f"{idx}. {topic}")
-    
-    st.markdown("---")
     st.markdown("### Generate Quiz from Summary")
-    st.write("A quiz will be generated based on the selected summary.")
+    
+    # Extract topics for Gemini constraint
+    topics_for_quiz = [t["main"].lower() for t in topics]
+    
+    if st.button("Create QUIZ", type="primary", use_container_width=True):
+        with st.spinner("Generating quiz..."):
+            quiz_text = generate_quiz(st.session_state["selected_summary"], topics_for_quiz)
+            st.session_state["generated_quiz"] = quiz_text
+            st.session_state["current_question_index"] = 0
+            st.session_state["user_answers"] = {}
+            st.session_state["quiz_performance"] = []
+            st.session_state["show_results"] = False
+        st.success("Quiz generated!")
 
-    if st.button("Create QUIZ"):
-        with st.spinner("Generating quiz from your summary..."):
-            quiz_text = generate_quiz(st.session_state["selected_summary"])
-        # Store and display the quiz
-        st.session_state["generated_quiz"] = quiz_text
-        st.success("Quiz generated from your content!")
-    # Initialize session state variables for quiz
+    
+    # Initialize session state for quiz
     if "current_question_index" not in st.session_state:
         st.session_state.current_question_index = 0
     if "user_answers" not in st.session_state:
         st.session_state.user_answers = {}
-    if "show_explanation" not in st.session_state:
-        st.session_state.show_explanation = False
-    if "answer_submitted" not in st.session_state:
-        st.session_state.answer_submitted = False
-
-    # If a quiz was generated earlier in this session, display it
-    if "generated_quiz" in st.session_state:
+    if "quiz_performance" not in st.session_state:
+        st.session_state.quiz_performance = []
+    if "show_results" not in st.session_state:
+        st.session_state.show_results = False
+    if "quiz_saved" not in st.session_state:
+        st.session_state.quiz_saved = False
+    
+    # Display quiz
+    if "generated_quiz" in st.session_state and not st.session_state.show_results:
         try:
             quiz_data = json.loads(st.session_state["generated_quiz"])
             
@@ -127,109 +115,104 @@ else:
                 st.markdown("### Quiz Interface")
                 
                 current_idx = st.session_state.current_question_index
-                total_questions = len(quiz_data)
                 current_question = quiz_data[current_idx]
                 
-                # Progress indicator
-                st.progress((current_idx + 1) / total_questions)
-                st.subheader(f"Question {current_idx + 1} of {total_questions}")
+                st.progress((current_idx + 1) / len(quiz_data))
+                st.subheader(f"Question {current_idx + 1}/{len(quiz_data)}")
                 
-                # Display question
-                st.write("**" + current_question['question'] + "**")
-                st.write("")
-                
-                # Display options as radio buttons
-                options = ["A", "B", "C", "D"]
-                option_labels = [f"{opt}: {current_question['options'][opt]}" for opt in options]
+                # Display topic (normalized to lowercase)
+                topic = current_question.get('topic', 'general').lower()
+                st.markdown(f"**📚 Topic:** {topic}")
+                st.write(current_question['question'])
                 
                 selected_answer = st.radio(
-                    "Select your answer:",
-                    options,
-                    format_func=lambda x: f"{x}: {current_question['options'][x]}",
-                    key=f"question_{current_idx}",
-                    index=None
+                    "Select answer:",
+                    list(current_question['options'].values()),
+                    key=f"answer_{current_idx}"
                 )
                 
-                col1, col2, col3 = st.columns([1, 1, 1])
+                col1, col2, col3 = st.columns(3)
                 
-                # Submit answer button
-                if selected_answer and not st.session_state.answer_submitted:
-                    if col2.button("Submit Answer", type="primary"):
+                with col1:
+                    if st.button("← Previous", use_container_width=True):
+                        if current_idx > 0:
+                            st.session_state.current_question_index -= 1
+                            st.rerun()
+                
+                with col2:
+                    if st.button("Submit Answer", type="primary", use_container_width=True):
                         st.session_state.user_answers[current_idx] = selected_answer
-                        st.session_state.answer_submitted = True
-                        st.rerun()
-                
-                # Show result after submission
-                if st.session_state.answer_submitted:
-                    user_answer = st.session_state.user_answers.get(current_idx)
-                    correct_answer = current_question['correct_option']
-                    
-                    if user_answer == correct_answer:
-                        st.success("✅ Correct!")
+                        is_correct = selected_answer == current_question['options'][current_question['correct_option']]
+                        st.session_state.quiz_performance.append(1.0 if is_correct else 0.0)
                         
-                        # Show explanation button for correct answers
-                        if col2.button("Show Explanation"):
-                            st.session_state.show_explanation = True
-                            st.rerun()
-                            
-                    else:
-                        st.error(f"❌ Incorrect! The correct answer is {correct_answer}")
-                        st.session_state.show_explanation = True
-                    
-                    # Show explanation if needed
-                    if st.session_state.show_explanation:
-                        st.info("**Explanation:** " + current_question.get('answer_explanation', 'No explanation provided.'))
-                
-                # Navigation buttons
-                nav_col1, nav_col2, nav_col3 = st.columns([1, 1, 1])
-                
-                # Previous button
-                if current_idx > 0:
-                    if nav_col1.button("← Previous"):
-                        st.session_state.current_question_index -= 1
-                        st.session_state.answer_submitted = False
-                        st.session_state.show_explanation = False
-                        st.rerun()
-                
-                # Next button
-                if current_idx < total_questions - 1:
-                    # Only show next button if answer is submitted
-                    if st.session_state.answer_submitted:
-                        if nav_col3.button("Next →"):
+                        if current_idx < len(quiz_data) - 1:
                             st.session_state.current_question_index += 1
-                            st.session_state.answer_submitted = False
-                            st.session_state.show_explanation = False
-                            st.rerun()
-                    else:
-                        nav_col3.button("Next →", disabled=True, help="Submit your answer first")
-                
-                # Show completion message
-                if current_idx == total_questions - 1 and st.session_state.answer_submitted:
-                    st.balloons()
-                    correct_count = sum(1 for i, answer in st.session_state.user_answers.items() 
-                                      if i < len(quiz_data) and answer == quiz_data[i]['correct_option'])
-                    st.success(f"🎉 Quiz completed! You got {correct_count} out of {len(st.session_state.user_answers)} questions correct.")
-                    total_answered = len(st.session_state.user_answers)
-                    if total_answered > 0:
-                        incorrect_count = total_answered - correct_count
-                        df = pd.DataFrame({"count": [correct_count, incorrect_count]}, index=["Correct", "Incorrect"])
-                        st.markdown("### Quiz Results")
-                        st.bar_chart(df)
-                    else:
-                        st.info("No answers to chart yet.")
-                    
-                    # Reset quiz button
-                    if st.button("Start Over"):
-                        st.session_state.current_question_index = 0
-                        st.session_state.user_answers = {}
-                        st.session_state.show_explanation = False
-                        st.session_state.answer_submitted = False
+                        else:
+                            st.session_state.show_results = True
                         st.rerun()
-                        
-            else:
-                st.warning("No quiz questions found in the generated quiz.")
                 
+                with col3:
+                    if st.button("Skip →", use_container_width=True):
+                        if current_idx < len(quiz_data) - 1:
+                            st.session_state.current_question_index += 1
+                            st.rerun()
+        
         except Exception as e:
-            st.error("Error parsing quiz data. Please generate a new quiz.")
-            st.code(st.session_state["generated_quiz"], language="json")
+            st.error(f"Error: {str(e)}")
+    
+    # Show results
+    if st.session_state.get("show_results", False) and "generated_quiz" in st.session_state:
+        quiz_data = json.loads(st.session_state["generated_quiz"])
+        
+        st.markdown("---")
+        st.markdown("### 📊 Quiz Results")
+        
+        score = sum(st.session_state.quiz_performance) / len(st.session_state.quiz_performance)
+        st.metric("Score", f"{score * 100:.1f}%")
+        
+        # Save score to database (only once)
+        summary_id = st.session_state.get("selected_summary_id")
+        if summary_id and not st.session_state.quiz_saved:
+            save_quiz_score(summary_id, score, len(quiz_data))
+            
+            # Naive Bayes analysis with normalized topics
+            classifier = NaiveBayesClassifier()
+            topic_results = []
+            
+            for i, q in enumerate(quiz_data):
+                topic = q.get("topic", f"question {i+1}").lower()
+                is_correct = st.session_state.quiz_performance[i] == 1.0
+                topic_results.append((topic, is_correct))
+                save_topic_performance(summary_id, topic, int(is_correct), 1)
+            
+            classifier.train(topic_results)
+            st.session_state.quiz_saved = True
+        
+        # Display analysis
+        if st.session_state.quiz_saved:
+            classifier = NaiveBayesClassifier()
+            topic_results = [(q.get("topic", f"question {i+1}").lower(), st.session_state.quiz_performance[i] == 1.0) 
+                           for i, q in enumerate(quiz_data)]
+            classifier.train(topic_results)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                weak = classifier.predict_weak_topics()
+                if weak:
+                    st.warning("🔴 **Topics to Review:**")
+                    for w in weak:
+                        st.write(f"- **{w['topic']}**: {w['accuracy']*100:.0f}% accuracy ({w['questions']} Q)")
+            
+            with col2:
+                st.info(f"📈 **Mastery Level:** {classifier.get_mastery_level()}")
+        
+        if st.button("Take Another Quiz"):
+            st.session_state.show_results = False
+            st.session_state.generated_quiz = None
+            st.session_state.quiz_saved = False
+            st.session_state.current_question_index = 0
+            st.session_state.user_answers = {}
+            st.session_state.quiz_performance = []
+            st.rerun()
+
     
