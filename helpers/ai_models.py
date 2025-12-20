@@ -9,9 +9,12 @@ def get_api_key():
     conn.close()
     return result[0] if result else ""
 
-client = genai.Client(api_key=get_api_key())
+def get_client():
+    """Create a fresh Gemini client with the current API key from the database."""
+    return genai.Client(api_key=get_api_key())
 
 def get_summary(text_extracted):
+    client = get_client()
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=f"""Summarize the following text as structured notes, similar to a README.md file. 
@@ -37,6 +40,7 @@ def generate_quiz(extracted_text, topics_list=None):
     Generate quiz questions from text.
     If topics_list provided, constrains questions to only those topics.
     """
+    client = get_client()
     topics_constraint = ""
     if topics_list:
         topics_str = ", ".join([f'"{t}"' for t in topics_list])
@@ -89,6 +93,7 @@ def generate_quiz(extracted_text, topics_list=None):
     return response.text.strip()
 
 def generate_flashcards(extracted_text):
+    client = get_client()
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=f"""
