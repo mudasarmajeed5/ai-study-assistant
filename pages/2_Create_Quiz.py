@@ -52,25 +52,32 @@ else:
     
     clustered_topics = difficulty_planner.get_topic_clusters_by_difficulty(topics)
     
-    tab1, tab2, tab3 = st.tabs(["🟢 Easy", "🟡 Medium", "🔴 Hard"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🥉 Bronze", "🥈 Silver", "🏆 Gold", "⭐ Platinum"])
     
     with tab1:
-        if clustered_topics["Easy"]:
-            for topic in clustered_topics["Easy"]:
+        if clustered_topics["Bronze"]:
+            for topic in clustered_topics["Bronze"]:
                 st.write(f"✓ {topic}")
         else:
             st.info("No topics in this cluster")
     
     with tab2:
-        if clustered_topics["Medium"]:
-            for topic in clustered_topics["Medium"]:
+        if clustered_topics["Silver"]:
+            for topic in clustered_topics["Silver"]:
                 st.write(f"✓ {topic}")
         else:
             st.info("No topics in this cluster")
     
     with tab3:
-        if clustered_topics["Hard"]:
-            for topic in clustered_topics["Hard"]:
+        if clustered_topics["Gold"]:
+            for topic in clustered_topics["Gold"]:
+                st.write(f"✓ {topic}")
+        else:
+            st.info("No topics in this cluster")
+    
+    with tab4:
+        if clustered_topics["Platinum"]:
+            for topic in clustered_topics["Platinum"]:
                 st.write(f"✓ {topic}")
         else:
             st.info("No topics in this cluster")

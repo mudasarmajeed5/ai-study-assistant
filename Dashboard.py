@@ -117,16 +117,16 @@ else:
             if stats['attempts'] > 0:
                 avg = stats['avg_score']
                 if avg >= 0.9:
-                    mastery = "Expert 🟢"
-                elif avg >= 0.8:
-                    mastery = "Advanced 🟢"
-                elif avg >= 0.7:
-                    mastery = "Intermediate 🟡"
+                    mastery = "Platinum ⭐"
+                elif avg >= 0.75:
+                    mastery = "Gold 🏆"
+                elif avg >= 0.6:
+                    mastery = "Silver 🥈"
                 else:
-                    mastery = "Beginner 🔴"
+                    mastery = "Bronze 🥉"
             else:
                 mastery = "No Data"
-            st.metric("Mastery Level", mastery)
+            st.metric("Rank", mastery)
         
         st.markdown("---")
         
