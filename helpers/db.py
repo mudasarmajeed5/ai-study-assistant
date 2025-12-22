@@ -5,10 +5,10 @@ from pathlib import Path
 DB_PATH = "database/summaries.db"
 
 def init_db():
-    # Ensure directory exists
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    
     c.execute('''CREATE TABLE IF NOT EXISTS summaries
                  (id INTEGER PRIMARY KEY, session_id TEXT, title TEXT, content TEXT, created_at TEXT)''')
     
@@ -30,9 +30,17 @@ def init_db():
                   total INTEGER,
                   timestamp TEXT,
                   FOREIGN KEY(summary_id) REFERENCES summaries(id))''')
-    
+ 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS config (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
     conn.commit()
     conn.close()
+
+
 
 def save_summary(title, content, session_id):
     conn = sqlite3.connect(DB_PATH)
@@ -59,7 +67,7 @@ def get_summary_by_id(summary_id):
     return result[0] if result else None
 
 def save_quiz_score(summary_id, score, total_questions, session_id):
-    """Save quiz score for a summary"""
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""INSERT INTO quiz_scores 
@@ -70,7 +78,6 @@ def save_quiz_score(summary_id, score, total_questions, session_id):
     conn.close()
 
 def get_quiz_scores_by_summary(summary_id):
-    """Get all quiz scores for a summary"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""SELECT score, total_questions, timestamp 
@@ -100,7 +107,7 @@ def get_summary_stats(summary_id):
     } if stats else {"avg_score": 0, "attempts": 0, "best_score": 0}
 
 def save_topic_performance(summary_id, topic, correct, total, session_id):
-    """Save performance for specific topic"""
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""INSERT INTO topic_performance 
@@ -127,7 +134,6 @@ def get_weak_topics(summary_id, threshold=0.7):
     return weak_topics
 
 def delete_summary(summary_id):
-    """Delete summary and cascade delete all related data"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     

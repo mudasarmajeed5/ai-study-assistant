@@ -15,16 +15,6 @@ if 'session_id' not in st.session_state:
 DB_PATH = Path("database/settings.db")
 DB_PATH.parent.mkdir(exist_ok=True)
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS config (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
 
 def get_api_key():
     conn = sqlite3.connect(DB_PATH)
@@ -39,7 +29,6 @@ def save_api_key(key):
     conn.commit()
     conn.close()
 
-init_db()
 
 # Session code management
 st.markdown("### 📌 Your Session Code")

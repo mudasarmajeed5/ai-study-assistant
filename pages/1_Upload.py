@@ -9,7 +9,6 @@ from helpers.db import save_summary, init_db
 
 init_db()
 
-# Initialize session ID
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())[:8].upper()
 
@@ -23,7 +22,6 @@ def extract_text_from_pdf(file):
             text += page_text
     return text
 
-# Configure page
 st.set_page_config(page_title="Home - AI Study Assistant", page_icon="🏠")
 
 st.title("🏠 Upload PDF/PPTX")
@@ -58,7 +56,6 @@ else:
                 if not summary: 
                     summary = "Summary not available."
             
-            st.success("Summary generated!")
             
             code_block_match = re.search(
             r'```(?:markdown|readme)?\s*(.*?)\s*```',
@@ -74,41 +71,32 @@ else:
             save_summary(file_name, cleaned_summary, st.session_state.session_id)
             st.success("Summary generated! Scroll down to view.")
 
-# Display selected summary if available
-if "selected_summary" in st.session_state:
-    st.markdown("---")
-    st.success(f"📖 Currently viewing: {st.session_state.get('selected_summary_title', 'Summary')}")
-    st.markdown("---")
-    st.markdown("### 📄 Summary")
-    st.markdown(st.session_state["selected_summary"])
-    
-    # Generate PDF for download
-    html_content = markdown2.markdown(st.session_state["selected_summary"])
-    pdf_bytes = HTML(string=html_content).write_pdf()
-    if pdf_bytes is not None: 
-        st.download_button(
-            label="📄 Download Summary as PDF",
-            data=pdf_bytes,
-            file_name=f"{st.session_state.get('selected_summary_title', 'Summary')}.pdf",
-            mime="application/pdf"
-        )
-else:
-    st.markdown("---")
-    st.info("Select a summary from the main page first.")
+# Display summary
+st.markdown("---")
 
 if "summary" in st.session_state:
-    st.markdown("---")
-    st.markdown("### Newly Generated Summary")
-    st.markdown(st.session_state["summary"])
+    summary_to_display = st.session_state["summary"]
+    title = f"{file_name}_Summary"
+elif "selected_summary" in st.session_state:
+    st.success(f"📖 Currently viewing: {st.session_state.get('selected_summary_title', 'Summary')}")
+    summary_to_display = st.session_state["selected_summary"]
+    title = st.session_state.get('selected_summary_title', 'Summary')
+else:
+    st.info("Select a summary from the main page or generate a new one.")
+    summary_to_display = None
+
+if summary_to_display:
+    st.markdown("### 📄 Summary")
+    st.markdown(summary_to_display)
     
     # Generate PDF for download
-    html_content = markdown2.markdown(st.session_state["summary"])
+    html_content = markdown2.markdown(summary_to_display)
     pdf_bytes = HTML(string=html_content).write_pdf()
     if pdf_bytes is not None: 
         st.download_button(
             label="📄 Download Summary as PDF",
             data=pdf_bytes,
-            file_name=f"{file_name}_Summary.pdf",
+            file_name=f"{title}.pdf",
             mime="application/pdf"
         )
     else: 
