@@ -71,29 +71,7 @@ else:
                     st.success(f"✅ Deleted: {title}")
                     st.rerun()
     
-    st.markdown("---")
-    
-    # Display Summary Content
-    if st.session_state.get("selected_summary"):
-        st.markdown(f"### 📄 Summary: {st.session_state.get('selected_summary_title')}")
-        st.markdown(st.session_state.get("selected_summary"))
-        
-        # Download button
-        summary_content = st.session_state.get("selected_summary")
-        summary_title = st.session_state.get("selected_summary_title")
-        html_content = markdown2.markdown(summary_content)
-        pdf_bytes = HTML(string=html_content).write_pdf()
-        if pdf_bytes is not None:
-            st.download_button(
-                label="📄 Download Summary as PDF",
-                data=pdf_bytes,
-                file_name=f"{summary_title}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-        
-        st.markdown("---")
-    
+   
     # Performance Dashboard (only show if a summary is selected)
     if st.session_state.get("selected_summary_title"):
         selected_id = st.session_state.get("selected_summary_id")
@@ -188,3 +166,26 @@ else:
         
 
 
+    st.markdown("---")
+    
+    # Display Summary Content
+    if st.session_state.get("selected_summary"):
+        st.markdown(f"### 📄 Summary: {st.session_state.get('selected_summary_title')}")
+        st.markdown(st.session_state.get("selected_summary"))
+        
+        # Download button
+        summary_content = st.session_state.get("selected_summary")
+        summary_title = st.session_state.get("selected_summary_title")
+        html_content = markdown2.markdown(summary_content)
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        if pdf_bytes is not None:
+            st.download_button(
+                label="📄 Download Summary as PDF",
+                data=pdf_bytes,
+                file_name=f"{summary_title}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        
+        st.markdown("---")
+    

@@ -178,9 +178,10 @@ else:
         
         # Save score to database (only once)
         summary_id = st.session_state.get("selected_summary_id")
-        if summary_id and not st.session_state.quiz_saved:
+        if summary_id is not None and not st.session_state.quiz_saved:
             save_quiz_score(summary_id, score, len(quiz_data))
             st.session_state.quiz_saved = True
+            st.success("✅ Score saved to database!")
         
         if st.button("Take Another Quiz"):
             st.session_state.show_results = False

@@ -4,7 +4,7 @@ from PyPDF2 import PdfReader
 import markdown2
 from weasyprint import HTML
 from helpers.ai_models import get_summary
-from helpers.db import save_summary, init_db
+from helpers.db import save_summary, init_db, get_all_summaries
 
 init_db()
 
@@ -65,4 +65,13 @@ else:
                 
             st.session_state["summary"] = cleaned_summary
             save_summary(file_name, cleaned_summary)
-            st.success("✅ Summary generated and saved! Go to Dashboard to view it.")
+            
+            # Get the newly saved summary ID
+            all_summaries = get_all_summaries()
+            if all_summaries:
+                latest_id, latest_title = all_summaries[0]  # Most recent summary
+                st.session_state["selected_summary"] = cleaned_summary
+                st.session_state["selected_summary_title"] = latest_title
+                st.session_state["selected_summary_id"] = latest_id
+            
+            st.success("✅ Summary generated and saved! Go to Create Quiz to begin.")
