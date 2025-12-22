@@ -171,7 +171,7 @@ else:
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            if st.button("📝 Create Quiz", use_container_width=True):
+            if st.button("Create Quiz", use_container_width=True):
                 st.switch_page("pages/2_Create_Quiz.py")
         
         with col2:

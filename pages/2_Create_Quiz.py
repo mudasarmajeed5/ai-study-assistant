@@ -11,7 +11,7 @@ st.set_page_config(page_title="Create Quiz - AI Study Assistant", page_icon="ğŸ“
 
 init_db()
 
-st.title("ğŸ“ Create Quiz")
+st.title("Create Quiz")
 st.markdown("---")
 
 extractor = ConceptExtractor()
