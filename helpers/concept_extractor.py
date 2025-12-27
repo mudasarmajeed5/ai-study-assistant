@@ -35,13 +35,8 @@ class ConceptExtractor:
     def build_quiz_topics(self, summary_text: str) -> List[Dict]:
         concepts = self.dfs_extract_concepts(summary_text)
         return [
-            {
-                "order": idx,
-                "main": concept,
-                "subtopics": subs,
-                "depth": len(subs)
-            }
-            for idx, (concept, subs) in enumerate(concepts.items(), 1)
+            {"main": concept}
+            for concept in concepts.keys()
         ]
     
     def analyze_concept_relationships(self, summary_text: str) -> Dict:
