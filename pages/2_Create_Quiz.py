@@ -1,7 +1,6 @@
 import json
 import streamlit as st
 from helpers.ai_models import generate_quiz
-import pandas as pd
 from helpers.concept_extractor import ConceptExtractor
 from helpers.difficulty_planner import DifficultyPlanner
 from helpers.db import save_quiz_score, init_db
@@ -34,17 +33,6 @@ else:
         st.metric("Sub-Topics", analysis["total_subconcepts"])
     with col3:
         st.metric("Total Topics", analysis["total_main_concepts"] + analysis["total_subconcepts"])
-    
-    st.write("**Concept Complexity Breakdown:**")
-    complexity_df = pd.DataFrame({
-        "Complexity": ["Simple", "Moderate", "Complex"],
-        "Count": [
-            analysis["concepts_by_complexity"]["simple"],
-            analysis["concepts_by_complexity"]["moderate"],
-            analysis["concepts_by_complexity"]["complex"]
-        ]
-    })
-    st.bar_chart(complexity_df.set_index("Complexity"))
     
     st.markdown("---")
     st.markdown("### 📊 Topics Grouped by Similarity (K-Means)")

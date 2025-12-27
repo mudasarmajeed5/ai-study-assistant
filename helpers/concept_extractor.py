@@ -19,7 +19,6 @@ class ConceptExtractor:
                     concepts[concept] = []
                     current_parent = concept
             
-            # Parse bullet points and bold text as subconcepts
             elif current_parent:
                 if stripped.startswith(('- ', '* ')):
                     subconcept = re.sub(r'^[-*]\s*', '', stripped).strip()
@@ -45,25 +44,10 @@ class ConceptExtractor:
             for idx, (concept, subs) in enumerate(concepts.items(), 1)
         ]
     
-    def get_concept_difficulty(self, topic: Dict) -> str:
-        depth = topic["depth"]
-        return "Easy" if depth == 0 else "Medium" if depth <= 3 else "Hard"
-    
-    def get_dfs_order(self, summary_text: str) -> List[str]:
-        concepts = self.dfs_extract_concepts(summary_text)
-        return [concept for main in concepts for concept in [main] + concepts[main]]
-    
     def analyze_concept_relationships(self, summary_text: str) -> Dict:
         concepts = self.dfs_extract_concepts(summary_text)
         
         return {
             "total_main_concepts": len(concepts),
-            "total_subconcepts": sum(len(subs) for subs in concepts.values()),
-            "concepts_by_complexity": {
-                "simple": sum(1 for subs in concepts.values() if len(subs) == 0),
-                "moderate": sum(1 for subs in concepts.values() if 1 <= len(subs) <= 3),
-                "complex": sum(1 for subs in concepts.values() if len(subs) > 3)
-            },
-            "all_topics": list(concepts.keys()),
-            "subtopic_map": concepts
+            "total_subconcepts": sum(len(subs) for subs in concepts.values())
         }
