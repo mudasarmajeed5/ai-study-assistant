@@ -84,7 +84,6 @@ else:
         st.success("Quiz generated!")
 
 
-    # Initialize session state for quiz
     if "current_question_index" not in st.session_state:
         st.session_state.current_question_index = 0
     if "user_answers" not in st.session_state:
@@ -129,25 +128,17 @@ else:
                 
                 with col2:
                     if st.button("Submit Answer", type="primary", width='stretch'):
-                        # Store the user's selected answer for this question
                         st.session_state.user_answers[current_idx] = selected_answer
                         
-                        # Check if the selected answer matches the correct option
-                        # correct_option is "A", "B", "C", or "D"
-                        # options is a dict with keys "A", "B", "C", "D" mapping to answer strings
                         is_correct = selected_answer == current_question['options']['B']
                         
-                        # Record performance: 1.0 for correct, 0.0 for incorrect
                         st.session_state.quiz_performance.append(1.0 if is_correct else 0.0)
-                        
-                        # Move to next question or show results if this was the last question
-                        # 4 (3)
+                      
                         if current_idx < len(quiz_data) - 1:
                             st.session_state.current_question_index += 1
                         else:
                             st.session_state.show_results = True
                         
-                        # Rerun to update the UI
                         st.rerun()
                 
                 with col3:
@@ -159,7 +150,6 @@ else:
         except Exception as e:
             st.error(f"Error: {str(e)}")
     
-    # Show results
     if st.session_state.get("show_results", False) and "generated_quiz" in st.session_state:
         quiz_data = json.loads(st.session_state["generated_quiz"])
         
@@ -169,7 +159,6 @@ else:
         score = sum(st.session_state.quiz_performance) / len(st.session_state.quiz_performance)
         st.metric("Score", f"{score * 100:.1f}%")
         
-        # Save score to database (only once)
         summary_id = st.session_state.get("selected_summary_id")
         if summary_id is not None and not st.session_state.quiz_saved:
             save_quiz_score(summary_id, score, len(quiz_data))

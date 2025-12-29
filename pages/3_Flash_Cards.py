@@ -42,11 +42,9 @@ else:
                 total_cards = len(flashcards_data)
                 current_card = flashcards_data[current_idx]
                 
-                # Progress indicator
                 st.progress((current_idx + 1) / total_cards)
                 st.subheader(f"Card {current_idx + 1} of {total_cards}")
                 
-                # Flash card container with rotation animation
                 card_container = st.container()
                 with card_container:
                     st.markdown("""
@@ -91,7 +89,6 @@ else:
                     flip_key = f"flip_card_{current_idx}"
                     
                     if not st.session_state.show_answer:
-                        # Show question side
                         st.markdown(f"""
                         <div class="flashcard" id="{flip_key}">
                             <div class="card-content">
@@ -102,7 +99,6 @@ else:
                         </div>
                         """, unsafe_allow_html=True)
                     else:
-                        # Show answer side with flip animation
                         st.markdown(f"""
                         <div class="flashcard flipped" id="{flip_key}">
                             <div class="card-content card-back">
@@ -113,7 +109,6 @@ else:
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Control buttons - centered
                     col1, col2, col3 = st.columns([2, 1, 2])
                     with col2:
                         if not st.session_state.show_answer:
@@ -125,11 +120,9 @@ else:
                                 st.session_state.show_answer = False
                                 st.rerun()
 
-                # Navigation buttons
                 st.markdown("---")
                 nav_col1, nav_col2, nav_col3 = st.columns([1, 1, 1])
                 
-                # Previous button
                 if current_idx > 0:
                     if nav_col1.button("← Previous Card"):
                         st.session_state.current_flashcard_index -= 1
@@ -138,17 +131,14 @@ else:
                 else:
                     nav_col1.empty()
                 
-                # Card counter in middle
                 nav_col2.markdown(f"**{current_idx + 1} / {total_cards}**")
                 
-                # Next button
                 if current_idx < total_cards - 1:
                     if nav_col3.button("Next Card →"):
                         st.session_state.current_flashcard_index += 1
                         st.session_state.show_answer = False
                         st.rerun()
                 else:
-                    # Show completion message on last card
                     if nav_col3.button("🎉 Review Complete"):
                         st.balloons()
                         st.success("Great job! You've reviewed all flash cards.")

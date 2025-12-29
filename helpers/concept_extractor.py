@@ -12,7 +12,6 @@ class ConceptExtractor:
             if not stripped:
                 continue
             
-            # Parse markdown headers (## or ###) as main concepts
             if stripped.startswith('##') or stripped.startswith('###'):
                 concept = re.sub(r'^#+\s*', '', stripped).strip()
                 if concept:

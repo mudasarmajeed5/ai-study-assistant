@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from PyPDF2 import PdfReader
-from weasyprint import HTML
+
 from helpers.ai_models import get_summary
 from helpers.db import save_summary, init_db, get_all_summaries
 

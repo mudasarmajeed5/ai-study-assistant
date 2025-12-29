@@ -10,7 +10,6 @@ def get_api_key():
     return result[0] if result else ""
 
 def get_client():
-    """Create a fresh Gemini client with the current API key from the database."""
     return genai.Client(api_key=get_api_key())
 
 def get_summary(text_extracted):

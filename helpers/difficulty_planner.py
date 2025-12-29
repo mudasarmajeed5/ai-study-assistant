@@ -1,7 +1,7 @@
 from typing import List, Dict
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
-import numpy as np
+
 
 class DifficultyPlanner:
     
