@@ -43,7 +43,7 @@ def generate_quiz(extracted_text):
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=f"""
-        Generate 4 multiple-choice quiz from the following:
+        Generate 10 multiple-choice quiz from the following:
         {extracted_text}
         
         Output rules (follow strictly):
